@@ -1,0 +1,6 @@
+.env
+/build/*
+!/build/.keep
+/.venv
+/pgdata
+schema_old.sql

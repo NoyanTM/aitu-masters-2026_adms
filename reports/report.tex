@@ -1,0 +1,78 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[
+    backend=biber,
+    style=ieee,
+    sorting=none
+]{biblatex}
+\addbibresource{references.bib}
+\usepackage{parskip}
+\usepackage{graphicx}
+\graphicspath{{./figures/}}
+\setcounter{secnumdepth}{-1}
+
+\begin{document}
+
+% @TODO: \maketitle macros
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.45\textwidth]{aitu-logo.png}\par\vspace{2cm}
+    {\huge \bfseries Final Report\par}\vspace{1cm}
+    {\large Course: Advanced Database Management Systems\par}\vspace{0.5cm}
+    {\large Topic: Database Design and ER Modeling Implementation in PostgreSQL\par}\vspace{0.5cm}
+    {\large Student: Tendikov Noyan\par}\vspace{0.5cm}
+    {\large Group: SSE-2401\par}\vspace{0.5cm}
+    {\large Instructor: Glazyrina Natalya\par}\vspace{0.5cm}
+    {\large Astana, Kazakhstan\par}\vspace{0.5cm}
+    {\large Astana IT University, 2025-2026\par}\vspace{0.5cm}
+    \vfill
+    {\small Source materials:\\
+    \url{https://github.com/NoyanTM/aitu-masters-2026_adms}}
+\end{titlepage}
+
+% @TODO: fix numbering for \tableofcontents
+\newpage
+
+\section{Introduction}
+Objectives:
+\begin{itemize}
+    \item convert domain requirements into an ER model;
+    \item perform normalization up to 3NF / BCNF where applicable;
+    \item implement a correct PostgreSQL schema with PK / FK / UNIQUE / CHECK
+constraints;
+    \item prepare test data and validate the model using SQL queries.
+\end{itemize}
+
+The objective of this assignment was to define a specific domain for database architectural design. While initial considerations included various domains such as library management, e-commerce, and research tracking, the primary focus was narrowed to "University Lab Equipment Booking", specifically targeting the reservation lifecycle and usage monitoring of laboratory resources. Subsequently, the scope was expanded to integrate these functionalities into a unified, open system titled "EduHub". This platform is designed to digitize and automate the comprehensive educational lifecycle, encompassing course delivery, research projects, and auxiliary institutional operations such as organizational governance and student life. Given the broad functional range of the project, the architecture will be developed iteratively, utilizing bounded contexts to maintain modularity and manage complexity. Currently, the initiative is envisioned as a digital twin or an alternative ecosystem designed for the simulation and testing of a unique institutional environment. Examples and related references: app.testcenter.kz, du.astanait.edu.kz, lms.astanait.edu.kz, netacad.com, energylab.kz, learn.astanait.edu.kz, etc.
+
+% \cite{EntityRelationshipModel2025} % \cite{4+1ArchitecturalView2024}.
+The engineering of such complex systems can be executed through diverse methodologies, ranging from initial requirements gathering to prototyping. For the scope of this assignment, the design process centers on the application of Entity-Relationship Diagrams (ERDs). This approach decomposes the domain into entities (autonomous physical or logical elements characterized by specific attributes) and relationships (which define the associations between entities governed by distinct cardinalities). ER models are visualized using standardized notations, such as Crow's Foot, Chen's, and others. The design workflow follows a rigorous architectural progression, transitioning from conceptual models (abstract ERDs) to logical models (relational table structures), and to physical models (Data Definition Language/DDL schemas)
+
+\section{Practice}
+\subsection{Environment setup and tools}
+Firstly, the storage and versioning of source materials are managed via Git on GitHub, ensuring a transparent process for execution and tracking changes. Secondly, the ERD was initially sketched in draw.io for drafting purposes, while the final model was developed using PlantUML. This enables a "diagrams-as-code" methodology, where visualizations are generated from code to allow for seamless transformations and updates \cite{kurotychOptimizingProcessER2025}. Thirdly, Docker containerization was utilized for ease of installation and test deployment of PostgreSQL (noting that this is limited to the educational environment, as production environments should remain native to avoid potential complexities and errors associated with containers). Fourthly, Python is employed for SQL client and scripting functionality, with dependencies managed in requirements.txt (to be replaced by pyproject.toml later); DBeaver was also installed as a GUI tool for debugging. Fifthly, the database migration was performed using the Alembic toolkit to ensure easy reproducibility of results, although it could also have been implemented using plain .sql files.
+
+\subsection{Data models}
+% https://en.wikipedia.org/wiki/Multitier_architecture, https://en.wikipedia.org/wiki/Database_normalization, https://en.wikipedia.org/wiki/Denormalization
+When designing a database, there are always trade-offs. First, excessive normalization reduces data redundancy, but on the other hand, it can lead to complex relationships or queries with excessive JOINs, resulting in performance penalties (which require additional profiling using tools like EXPLAIN). Therefore, some developers apply denormalization as a scaling requirement to balance storage efficiency with query speed. Second, there is a choice between universal schemas versus highly specialized, narrow-purpose schemas; in the latter case, any change in the business domain necessitates changes in the database structure. Third, there are design approaches such as Anchor Modeling, where each entity is decomposed into multiple tables representing individual attributes. This is done to achieve greater flexibility for changes, rather than maintaining a strict, indivisible table for each entity. It is also crucial to consider multi-tier architecture, where the storage format does not always map directly to the output data (i.e., data is stored in one form but presented or processed in a completely different way). Fourth, SQLAlchemy ORM was utilized, which provides convenience for development and prototyping. However, it may sacrifice the simplicity and flexibility of raw SQL or potentially slow down the software due to the overhead of the Active Record pattern and N+1 query issues.
+
+% https://online.zakon.kz/Document/?doc_id=39779560, https://adilet.zan.kz/rus/docs/V2400035615, https://enic-kazakhstan.edu.kz/ru/accreditation/accredited_organizations, https://adilet.zan.kz/rus/docs/G25E0000169, https://en.wikipedia.org/wiki/Laboratory_information_management_system
+The designed prototype model and the description of relationships are presented in Figure \ref{fig:data-model}. The presented database is an oversimplified representation, as there can be multiple special cases and details (such as public laboratories, governmental regulations, laws, domain knowledge of actual employees, etc.). There are numerous aspects that still need to be addressed regarding the relationships and their forms, as well as the strategy for scaling and expanding the tables in the future.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\linewidth]{data-model}
+    \caption{Initial draft of data model.}
+    \label{fig:data-model}
+\end{figure}
+
+\subsection{Data insertion and validation}
+Minimum inserts and validation queries are demonstrated in the scripts directory, implemented using Python scripts and the Faker library for synthetic data generation. In the future, these generators should be migrated into the test suite and made more declarative using factory_boy. Furthermore, there is an opportunity to integrate Language models to generate synthetic data that aligns more closely with the specific database context than a purely random dataset.
+
+% \section{Conclusion}
+% дописать текстовку с описанием результатов и чего недостаточно и что нужно отредактировать в дальнейшем ведь пока это слабое и первичное решение
+
+\printbibliography
+
+\end{document}
