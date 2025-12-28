@@ -1,6 +1,6 @@
 .env
-/build/*
-!/build/.keep
+/reports/build/*
+!/reports/build/.keep
 /.venv
 /pgdata
 schema_old.sql
