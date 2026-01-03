@@ -21,7 +21,18 @@ from eduhub.models import (
     Dataset,
     Booking,
 )
+from eduhub.common.types import (
+    AccountRole, 
+    PartnerType,
+    PresentationVisibility, 
+    ProjectType,
+    ProjectStatus,
+    EquipmentStatus,
+    BookingStatus,
+    ReportStatus,
+)
 from eduhub.common.config import Config
+
 
 # @TODO: generate data beforehand and read from generate data file
 # generating list of objects of list of dictionaries
@@ -97,7 +108,7 @@ def main():
         Account(
             full_name=fake.name(), # @TODO: faker.full_name
             email=fake.email(), # @TODO: email unique in faker
-            role="guest", # @TODO: different roles within system (faker.enum)
+            role=fake.enum(AccountRole),
             laboratory=random.choice(laboratories), # @TODO: choosing distribution of random and rarity 
         )
         for index in range(1, MAX_NUM_ACCOUNTS + 1)
@@ -120,9 +131,9 @@ def main():
     ]
     equipment_list = [
         Equipment(
-            status="active", # @TODO: enum
+            status=fake.enum(EquipmentStatus),
             description=fake.text(max_nb_chars=200),
-            image_link=fake.image_url(),
+            media_link=fake.image_url(),
             approval_requirements={"minimal_role": "assistant"}, # @TODO: enum and other rule-fields
             laboratory=laboratory,
         )
@@ -133,9 +144,13 @@ def main():
         Project(
             title=fake.text(max_nb_chars=20),
             description=fake.text(max_nb_chars=200),
-            type="research", # @TODO: enum
-            status="active", # @TODO: enum
-            laboratory=laboratory
+            type=fake.enum(ProjectType),
+            status=fake.enum(ProjectStatus),
+            laboratory=laboratory,
+            participants=random.sample(
+                accounts, 
+                k=random.randint(1, min(len(accounts), 5))
+            )
         )
         for laboratory in laboratories
         for index in range(1, random.randint(2, MAX_NUM_PROJECTS_PER_LABORATORY + 1))
@@ -143,7 +158,7 @@ def main():
     partners = [
         Partner(
             title=fake.company(),
-            type="local",
+            type=fake.enum(PartnerType),
             projects=projects
         )
         for project in projects
@@ -157,7 +172,7 @@ def main():
                     description=fake.text(max_nb_chars=200),
                     link=fake.url(),
                     duration=fake.pyint(min_value=1, max_value=10**5),
-                    visibility="private_internal",
+                    visibility=fake.enum(PresentationVisibility),
                     subtitles=[
                         {   
                             "format": "VTT",
@@ -177,7 +192,7 @@ def main():
                     end=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=random.randint(100, 10**4)),
                     responsibility_zone=fake.text(max_nb_chars=200),
                     comments=fake.text(max_nb_chars=200),
-                    status="draft",
+                    status=fake.enum(ReportStatus),
                     projects=projects,
                 ),
                 Publication(
@@ -218,9 +233,9 @@ def main():
     ]
     booking = [
         Booking(
-            start=datetime.datetime.now(tz=datetime.UTC),
-            end=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=random.randint(100, 10**4)),
-            status="requested",
+            start_ts=datetime.datetime.now(tz=datetime.UTC),
+            end_ts=datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=random.randint(100, 10**4)),
+            status=fake.enum(BookingStatus),
             comment=fake.text(max_nb_chars=200),
         )
         for index in range(1, MAX_NUM_BOOKINGS + 1)

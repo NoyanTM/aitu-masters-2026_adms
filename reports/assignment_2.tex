@@ -1,0 +1,88 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+% \usepackage[
+%     backend=biber,
+%     style=ieee,
+%     sorting=none
+% ]{biblatex}
+% \addbibresource{references.bib}
+\usepackage{parskip}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+% \usepackage{hyperref}
+\usepackage{url}
+\graphicspath{{./figures/}}
+\setcounter{secnumdepth}{-1}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.45\textwidth]{aitu-logo.png}\par\vspace{2cm}
+    {\huge \bfseries Assignment Report\par}\vspace{1cm}
+    {\large Course: Advanced Database Management Systems\par}\vspace{0.5cm}
+    {\large Topic: Constraints, Views, and Advanced Queries in PostgreSQL\par}\vspace{0.5cm}
+    {\large Student: Tendikov Noyan\par}\vspace{0.5cm}
+    {\large Group: SSE-2401\par}\vspace{0.5cm}
+    {\large Instructor: Glazyrina Natalya\par}\vspace{0.5cm}
+    {\large Astana, Kazakhstan\par}\vspace{0.5cm}
+    {\large Astana IT University, 2025-2026\par}\vspace{0.5cm}
+    \vfill
+    {\small Source materials:\\
+    \url{https://github.com/NoyanTM/aitu-masters-2026_adms}}
+\end{titlepage}
+
+\newpage
+
+\section{Practice}
+Objectives:
+\begin{itemize}
+    \item apply integrity constraints (PK/FK/UNIQUE/CHECK/NOT NULL, cascade rules);
+    \item design views (reporting + restricted/updatable views);
+    \item write complex SQL queries using joins, grouping, subqueries, CTEs, and window
+functions;
+    \item validate correctness of the schema and data via test queries.
+\end{itemize}
+
+The objective of this assignment was to strengthen business rules constraints and integrity checks by introducing additional constraints. They can be defined within database by DDL and modifying exisiting tables via "ALTER TABLE" in migrations, or specified from SQLAlchemy via orm.validates, or by defining special application logic. Such constrains and internal rules includes:
+\begin{itemize}
+    \item Enumerations via CHECK constraint on strings (e.g., CheckConstraint in \verb|__table_args__| of SQLAlchemy) or explicid enum type.
+    \item Uniqueness by UNIQUE constraint.
+    \item Time validity by using CHECK constraint. For example, end time of some action must be later than start of the same action.
+    \item Foreign keys with meaningful actions (unique, restrict, on delete cascade, etc.).
+\end{itemize}
+
+General changes represented in figures bellow. Also, I changed start and end fields in each table to start\_st and end\_ts, because they are reserved keywords in PostgreSQL according to \url{https://www.postgresql.org/docs/current/sql-keywords-appendix.html}.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{enumerations-in-code-1}
+        \caption{Part 1. Enumerations in Python code}
+        \label{fig:enumerations-in-code-1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.5\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{enumerations-in-code-2}
+        \caption{Part 2. Enumerations in Python code}
+        \label{fig:enumerations-in-code-2}
+    \end{subfigure}
+    \hfill
+    \caption{Enumerations in /eduhub/common/types.py}
+    \label{fig:enumerations}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\linewidth]{enumerations-in-table}
+    \caption{Enumerations in data tables as explicit type}
+    \label{fig:enumerations-in-table}
+\end{figure}
+
+% \printbibliography
+
+\end{document}

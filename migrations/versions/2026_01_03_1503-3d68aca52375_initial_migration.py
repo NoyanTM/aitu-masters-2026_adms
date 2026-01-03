@@ -1,8 +1,8 @@
-"""initial migration
+"""Initial migration
 
-Revision ID: 852afaf9b440
+Revision ID: 3d68aca52375
 Revises: 
-Create Date: 2025-12-27 13:46:53.552463
+Create Date: 2026-01-03 15:03:57.372054
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '852afaf9b440'
+revision: str = '3d68aca52375'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('characteristics', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('characteristics', postgresql.JSONB(astext_type=sa.Text()), nullable=True, comment='similar to SKU (e.g., brand, model, weight depending on the context)'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('laboratory',
@@ -37,8 +37,7 @@ def upgrade() -> None:
     op.create_table('partner',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
-    sa.Column('type', sa.String(), server_default='local', nullable=False),
-    sa.CheckConstraint("type in ('local', 'regional', 'national', 'international', 'global')"),
+    sa.Column('type', sa.Enum('LOCAL', 'REGIONAL', 'NATIONAL', 'INTERNATIONAL', 'GLOBAL', name='partnertype'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('resource',
@@ -53,9 +52,8 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
-    sa.Column('role', sa.String(), server_default='guest', nullable=False, comment='Roles within the system'),
+    sa.Column('role', sa.Enum('GUEST', 'STUDENT', 'STAFF', 'MODERATOR', 'ADMINISTRATOR', name='accountrole'), nullable=False, comment='Role within the system'),
     sa.Column('laboratory_id', sa.Integer(), nullable=False),
-    sa.CheckConstraint("role in ('guest', 'student', 'staff', 'moderator', 'administrator')"),
     sa.ForeignKeyConstraint(['laboratory_id'], ['laboratory.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
@@ -71,13 +69,12 @@ def upgrade() -> None:
     )
     op.create_table('equipment',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('status', sa.String(), nullable=False),
+    sa.Column('status', sa.Enum('ACTIVE', 'MALFUNCTIONED', 'MAINTENANCE', 'RETIRED', name='equipmentstatus'), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('image_link', sa.String(), nullable=True),
+    sa.Column('media_link', sa.String(), nullable=True, comment='video, image, audio, or other mimetype'),
     sa.Column('approval_requirements', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('laboratory_id', sa.Integer(), nullable=False),
     sa.Column('equipment_type_id', sa.Integer(), nullable=True),
-    sa.CheckConstraint("status in ('active', 'malfunctioned', 'maintenance', 'retired')"),
     sa.ForeignKeyConstraint(['equipment_type_id'], ['equipment_type.id'], ),
     sa.ForeignKeyConstraint(['laboratory_id'], ['laboratory.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -86,8 +83,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('duration', sa.Integer(), server_default='0', nullable=False, comment='Duration in seconds'),
     sa.Column('subtitles', postgresql.JSONB(astext_type=sa.Text()), nullable=True, comment='Subtitles/transcription in different languages and formats'),
-    sa.Column('visibility', sa.String(), nullable=False),
-    sa.CheckConstraint("visibility in ('private_internal', 'stakeholders_only', 'public_community')"),
+    sa.Column('visibility', sa.Enum('PRIVATE_INTERNAL', 'STAKEHOLDERS_ONLY', 'PUBLIC_COMMUNITY', name='presentationvisibility'), nullable=False),
     sa.ForeignKeyConstraint(['id'], ['resource.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -95,11 +91,9 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('title', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('type', sa.String(), nullable=False),
-    sa.Column('status', sa.String(), nullable=False),
+    sa.Column('type', sa.Enum('RESEARCH', 'COMMERCIAL', 'COMMUNITY', name='projecttype'), nullable=False),
+    sa.Column('status', sa.Enum('ACTIVE', 'COMPLETED', name='projectstatus'), nullable=False),
     sa.Column('laboratory_id', sa.Integer(), nullable=False),
-    sa.CheckConstraint("status in ('active', 'completed')"),
-    sa.CheckConstraint("type in ('research', 'commercial', 'community')"),
     sa.ForeignKeyConstraint(['laboratory_id'], ['laboratory.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -116,14 +110,13 @@ def upgrade() -> None:
     sa.Column('end', sa.DateTime(timezone=True), nullable=False),
     sa.Column('responsibility_zone', sa.String(), nullable=True),
     sa.Column('comments', sa.String(), nullable=True),
-    sa.Column('status', sa.String(), nullable=False),
-    sa.CheckConstraint("status in ('draft', 'submitted', 'revision', 'approved')"),
+    sa.Column('status', sa.Enum('DRAFT', 'SUBMITTED', 'REVISION', 'APPROVED', name='reportstatus'), nullable=False),
     sa.ForeignKeyConstraint(['id'], ['resource.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('room',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('label', sa.String(), nullable=False),
+    sa.Column('label', sa.String(), nullable=False, comment='name, number, id (like C1.1.111 or in other formats)'),
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('laboratory_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['laboratory_id'], ['laboratory.id'], ),
@@ -141,12 +134,12 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('equipment_id', sa.Integer(), nullable=False),
     sa.Column('requester_id', sa.Integer(), nullable=False),
-    sa.Column('start', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('end', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('status', sa.String(), server_default='requested', nullable=False),
+    sa.Column('start_ts', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('end_ts', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('status', sa.Enum('REQUESTED', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', name='bookingstatus'), nullable=False),
     sa.Column('approver_id', sa.Integer(), nullable=False),
     sa.Column('comment', sa.String(), nullable=True),
-    sa.CheckConstraint("status IN ('requested','approved','rejected','cancelled','completed')"),
+    sa.CheckConstraint('end_ts > start_ts'),
     sa.ForeignKeyConstraint(['approver_id'], ['account.id'], ),
     sa.ForeignKeyConstraint(['equipment_id'], ['equipment.id'], ),
     sa.ForeignKeyConstraint(['requester_id'], ['account.id'], ),
