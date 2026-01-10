@@ -1,0 +1,82 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{parskip}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{url}
+\graphicspath{{./figures/}}
+\setcounter{secnumdepth}{-1}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.45\textwidth]{aitu-logo.png}\par\vspace{2cm}
+    {\huge \bfseries Assignment Report\par}\vspace{1cm}
+    {\large Course: Advanced Database Management Systems\par}\vspace{0.5cm}
+    {\large Topic: Triggers and Server-Side Logic Automation in PostgreSQL\par}\vspace{0.5cm}
+    {\large Student: Tendikov Noyan\par}\vspace{0.5cm}
+    {\large Group: SSE-2401\par}\vspace{0.5cm}
+    {\large Instructor: Glazyrina Natalya\par}\vspace{0.5cm}
+    {\large Astana, Kazakhstan\par}\vspace{0.5cm}
+    {\large Astana IT University, 2025-2026\par}\vspace{0.5cm}
+    \vfill
+    {\small Source materials:\\
+    \url{https://github.com/NoyanTM/aitu-masters-2026_adms}}
+\end{titlepage}
+
+\newpage
+
+\section{Practice}
+Objectives:
+\begin{itemize}
+    \item write trigger functions in PL/pgSQL (BEFORE/AFTER, row-level);
+    \item automate business rules that are hard (or inconvenient) to express using only CHECK/FK constraints;
+    \item implement auditing/logging of changes in database tables;
+    \item maintain derived data (e.g., booking duration) and/or aggregates (usage statistics).
+\end{itemize}
+
+The objective of this assignment was to implement logging of table data in a manner similar to version control mechanisms, operating directly at the database level. This approach was intended to ensure that all changes to critical data are recorded consistently and independently of application-layer behavior. To achieve this, several possible strategies were considered, including the use of Data Definition Language (DDL) constructs to define database-level triggers, the implementation of specialized application logic, and the use of SQLAlchemy features such as the orm.validates method or event decorators.
+
+After evaluating these alternatives, the decision was made to implement a database trigger-based solution. Specifically, a dedicated table named BookingHistory was introduced to store historical records of the Booking table. A trigger was defined on the Booking table so that after any data modification operation—such as INSERT, UPDATE, or DELETE—the corresponding record state is automatically copied and written to the BookingHistory table. This design ensures that every change to booking data is persistently logged without requiring explicit intervention from the application code.
+
+This approach provides several advantages. By operating at the database level, it guarantees that all modifications are tracked regardless of how they are initiated, whether through the main application, administrative scripts, or direct SQL queries. Moreover, the BookingHistory table effectively serves as an audit log, enabling the reconstruction of past states of booking records and supporting traceability, debugging, and compliance requirements. The overall mechanism is conceptually similar to version control systems, where each change is preserved as a historical snapshot, thereby improving data transparency and reliability.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1.0\linewidth]{sqlalchemy-orm-events}
+    \caption{SQLAlchemy ORM events}
+    \label{fig:sqlalchemy-orm-events}
+\end{figure}
+
+In addition, data input validation was tested to ensure correctness and consistency, as illustrated in the subfigures of Figure 2. These tests were designed to verify that invalid or inconsistent data values are properly detected and rejected before being persisted in the database. By simulating various input scenarios, including edge cases and erroneous values, it was confirmed that the implemented validation mechanisms function as intended. This step is essential for maintaining data integrity and complements the logging mechanism by ensuring that only valid state changes are recorded in the BookingHistory table.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{subfigure}[b]{1.0\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{check-trigger-1}
+        \caption{Part 1. Checking if trigger is working}
+        \label{fig:check-trigger-1}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{1.0\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{check-trigger-2}
+        \caption{Part 2. Checking if trigger is working}
+        \label{fig:check-trigger-2}
+    \end{subfigure}
+    \begin{subfigure}[b]{1.0\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{check-trigger-3}
+        \caption{Part 3. Checking if trigger is working}
+        \label{fig:check-trigger-3}
+    \end{subfigure}
+    \hfill
+    % \caption{Checking if trigger is working via check_triggers script}
+    \label{fig:check_triggers}
+\end{figure}
+
+\end{document}

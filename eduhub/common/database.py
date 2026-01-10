@@ -26,5 +26,6 @@ def get_session(url: str):
         yield session_local
     except SQLAlchemyError as e:
         print(e)
+        # @TODO: rollback and raise?
     finally:
         session_local.close()

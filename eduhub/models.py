@@ -2,8 +2,19 @@ from typing import Any
 import datetime
 
 from sqlalchemy.dialects.postgresql.json import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import CheckConstraint, UniqueConstraint, ForeignKey, Table, Column, ARRAY, String, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
+from sqlalchemy import (
+    CheckConstraint, 
+    UniqueConstraint,
+    ForeignKey,
+    Table,
+    Column,
+    ARRAY,
+    String,
+    DateTime,
+    event,
+    inspect,
+)
 
 from eduhub.common.database import Base
 from eduhub.common.types import (
@@ -296,8 +307,8 @@ class Booking(Base):
     equipment_id: Mapped[int] = mapped_column(ForeignKey("equipment.id"))
     requester_id: Mapped[int] = mapped_column(ForeignKey("account.id"))
 
-    start_ts: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
-    end_ts: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
+    start_ts: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True)) # issued_when
+    end_ts: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True)) # returned_when
     status: Mapped[BookingStatus] = mapped_column(default=BookingStatus.REQUESTED)
     
     approver_id: Mapped[int] = mapped_column(ForeignKey("account.id"))
@@ -320,13 +331,33 @@ class BookingHistory(Base):
     __tablename__ = "booking_history"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    issued_when: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
-    returned_when: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
     note: Mapped[str | None]
+    changed_at: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True))
 
     booking_id: Mapped[int] = mapped_column(ForeignKey("booking.id"))
     booking: Mapped["Booking"] = relationship(back_populates="booking_histories")
 
-    __table_args__ = (
-        CheckConstraint("returned_when > issued_when"),
+
+@event.listens_for(Booking, "after_insert")
+@event.listens_for(Booking, "after_update")
+@event.listens_for(Booking, "after_delete")
+def booking_history_event(mapper, connection, target: Booking):
+    session = Session.object_session(target)
+    if session is None:
+        return
+    note = "Booking changed"
+    if mapper.dispatch.after_update:
+        state = inspect(target)
+        changed = [
+            attr.key
+            for attr in state.attrs
+            if attr.history.has_changes()
+        ]
+        if changed:
+            note = f"Updated fields: {', '.join(changed)}"
+    history = BookingHistory(
+        booking_id=target.id,
+        changed_at=datetime.datetime.now(tz=datetime.timezone.utc),
+        note=note,
     )
+    session.add(history)

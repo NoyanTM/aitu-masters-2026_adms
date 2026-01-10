@@ -17,6 +17,7 @@ alembic upgrade head
 ```sh
 python3 -m eduhub.scripts.insert_fake_data
 python3 -m eduhub.scripts.query_examples
+python3 -m eduhub.scripts.check_triggers
 ```
 
 ```sh
