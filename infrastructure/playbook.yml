@@ -1,0 +1,144 @@
+- hosts: docker_postgres_db
+  vars:
+    postgres_db: "{{ lookup('ansible.builtin.env', 'POSTGRES_DB') }}"
+    postgres_host: "{{ lookup('ansible.builtin.env', 'POSTGRES_HOST') }}"
+    postgres_user: "{{ lookup('ansible.builtin.env', 'POSTGRES_USER') }}"
+    postgres_password: "{{ lookup('ansible.builtin.env', 'POSTGRES_PASSWORD') }}"
+    postgres_port: "{{ lookup('ansible.builtin.env', 'POSTGRES_PORT') }}"
+  gather_facts: true
+  tasks:
+    - name: Try to ping postgres_db
+      community.postgresql.postgresql_ping:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_port: "{{ postgres_port }}"
+      register: ping_result
+
+    - name: Fail if target is not available
+      ansible.builtin.fail:
+        msg: Provided PostgreSQL instance is not available
+      when: ping_result.is_available is false
+
+    - name: Output result of ping to postgres_db
+      ansible.builtin.debug:
+        msg: "{{ ping_result }}"
+
+    - name: Collect metadata from PostgreSQL (version, extensions, and roles)
+      community.postgresql.postgresql_info:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_port: "{{ postgres_port }}"
+        filter: "ver*,ext*,roles*"
+      register: postgres_metadata
+
+    - name: Output metadata of target PostgreSQL
+      ansible.builtin.debug:
+        msg: "{{ postgres_metadata }}"
+
+    - name: Add test roles/users to target PostgreSQL
+      community.postgresql.postgresql_user:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_port: "{{ postgres_port }}"
+        name: "{{ item }}"
+        password: password_example
+        comment: Test users for assignment_4
+        state: present
+      loop:
+        - user_1
+        - user_2
+        - user_3
+        - user_4
+        - user_5
+
+    - name: Create simple function add() which requires special permission
+      community.postgresql.postgresql_query:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_port: "{{ postgres_port }}"
+        query: |
+          CREATE OR REPLACE FUNCTION add_nums(a integer, b integer) RETURNS integer AS $$
+          BEGIN
+            RETURN a + b;
+          END;
+          $$ LANGUAGE plpgsql;
+    
+    - name: Check that created roles/users do not have permission to some operations
+      # SQL Error [42501]: ERROR: permission denied for table <table_name>
+      # @TODO: such operation is not idempotent, need to check result by appending it
+      # to list and checking after that
+      community.postgresql.postgresql_query:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ item }}"
+        login_password: password_example
+        login_port: "{{ postgres_port }}"
+        query:
+        - SELECT * FROM profile LIMIT 2
+      ignore_errors: true
+      loop:
+        - user_1
+        - user_2
+        - user_3
+        - user_4
+        - user_5
+    
+    - name: Grant privileges to user_1 and user_2 on database profile
+      community.postgresql.postgresql_privs:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ postgres_user }}"
+        login_password: "{{ postgres_password }}"
+        login_port: "{{ postgres_port }}"
+        state: present
+        privs: SELECT,INSERT,UPDATE
+        type: table
+        objs: profile
+        schema: public
+        roles: user_1,user_2
+        grant_option: true
+
+    # REVOKE EXECUTE ON FUNCTION add_nums(integer, integer) FROM user_1;
+    # REVOKE EXECUTE ON FUNCTION add_nums(integer, integer) FROM user_2;
+    # ALTER DEFAULT PRIVILEGES FOR USER user_1 REVOKE EXECUTE ON FUNCTIONS FROM public;
+    # ALTER default privileges revoke execute on functions from public;
+    # - name: Remove privileges to all function for user_1 and user_2
+    #   community.postgresql.postgresql_privs:
+    #     login_db: "{{ postgres_db }}"
+    #     login_host: "{{ postgres_host }}"
+    #     login_user: "{{ postgres_user }}"
+    #     login_password: "{{ postgres_password }}"
+    #     login_port: "{{ postgres_port }}"
+    #     state: absent
+    #     privs: EXECUTE
+    #     type: function
+    #     objs: ALL_IN_SCHEMA
+    #     schema: public
+    #     roles: user_1,user_2
+
+    - name: Check that privileges were granted to user_1 and user_2 on database profile
+      community.postgresql.postgresql_query:
+        login_db: "{{ postgres_db }}"
+        login_host: "{{ postgres_host }}"
+        login_user: "{{ item }}"
+        login_password: password_example
+        login_port: "{{ postgres_port }}"
+        query:
+        - SELECT * FROM profile LIMIT 2
+      loop:
+        - user_1
+        - user_2
+      register: query_1
+
+    - name: Return information from query_1
+      ansible.builtin.debug:
+        msg: "{{ query_1 }}"
+
