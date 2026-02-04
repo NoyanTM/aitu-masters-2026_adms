@@ -8,6 +8,44 @@
     - cange generic TEXT to specific size limit depending on domain
     - utc+0 for timezone
     - customizable types with annotated (e.g., BigInteger) https://docs.sqlalchemy.org/en/20/orm/declarative_tables.html
+
+how to represent unlimited time period postgres or null time or unspeciefied date https://www.psycopg.org/psycopg3/docs/basic/from_pg2.html#no-default-infinity-dates-handling
+
+configure triggers in alembic migration https://github.com/sqlalchemy/sqlalchemy/discussions/6806
+
+configure timestamp https://www.reddit.com/r/flask/comments/1im57ij/sqlalchemy_is_driving_me_nuts/, https://stackoverflow.com/questions/13370317/sqlalchemy-default-datetime
+
+using Base.metadata.create_all to tests sqlalchemy
+
+sqlalchemy to pydantic or dataclass to_dict methods (to_something convention)
+
+sql naming convention
+
+sqlalchemy remove caching of queries
+
+typehinting in IDE when creating instance of object in sqlalchemy
+https://www.reddit.com/r/learnpython/comments/1pn0mbi/is_there_a_way_to_get_instance_creation_hints/
+https://www.reddit.com/r/SQLAlchemy/comments/14dll1n/proper_type_hinting_or_proper_type_conversion/
+
+auto increment issues
+https://stackoverflow.com/questions/5342440/reset-auto-increment-counter-in-postgres
+https://til.codeinthehole.com/posts/that-postgres-sequences-arent-restored-after-a-rollback/
+
+configure sessionmaker
+https://stackoverflow.com/questions/12223335/sqlalchemy-creating-vs-reusing-a-session
+https://stackoverflow.com/questions/72434935/is-sqlalchemy-sessionmaker-thread-safe
+
+https://stackoverflow.com/questions/378331/physical-vs-logical-hard-vs-soft-delete-of-database-record
+
+https://stackoverflow.com/questions/7786207/whats-the-difference-between-a-fixture-and-a-factory-in-my-unit-tests
+
+https://github.com/thoughtbot/factory_bot
+https://stackoverflow.com/questions/23349772/why-is-factory-boy-superior-to-using-the-orm-directly-in-tests
+
+https://softwareengineering.stackexchange.com/questions/280324/is-it-better-to-make-database-calls-or-external-api-calls-first-in-the-context-o
+
+https://github.com/francoisnt/seedlayer/tree/main
+
 1. Entity for `university` and entities within this organization such as department, faculty, etc.
     - Relationship to `laboratory`. On surface, two or more universities do not have same laboratories. Some universities can be without any laboratory at all or exceptional cases when someone shares one laboratory?
     - Relationship to `room`. How to structure relations in such way that we can attach rooms to both `university` and `laboratory`.

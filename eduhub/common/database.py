@@ -24,8 +24,8 @@ def get_session(url: str):
     session_local = session()
     try:
         yield session_local
-    except SQLAlchemyError as e:
+    except SQLAlchemyError as e: # or any exception like Exception
         print(e)
-        # @TODO: rollback and raise?
+        # optionally, rollback and raise exception here
     finally:
         session_local.close()
